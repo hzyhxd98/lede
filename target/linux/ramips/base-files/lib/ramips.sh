@@ -1,47 +1,34 @@
-PART_NAME=firmware
-REQUIRE_IMAGE_METADATA=1
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
 
-platform_check_image() {
-	local board=$(board_name)
+. /lib/ramips.sh
 
-	case "$board" in
-	wd,mybooklive)
-		mbl_do_platform_check "$1"
-		return $?;
-		;;
-	*)
-		return 0
-		;;
-	esac
+ramips_set_preinit_iface() {
+	RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350|MT7628|MT7688|MT7620|MT7621)"`
+
+	if [ -n "${RT3X5X}" ]; then
+		# The ethernet switch driver enables VLAN by default, but
+		# failsafe uses eth0, making the device unreachable:
+		# https://dev.openwrt.org/ticket/18768
+		case "${RT3X5X}" in
+		*MT7620*)
+			ralink_switchdev=mt7620
+			;;
+		*MT7621*)
+			ralink_switchdev=mt7530
+			;;
+		*)
+			ralink_switchdev=rt305x
+			;;
+		esac
+		swconfig dev $ralink_switchdev set reset 1
+		swconfig dev $ralink_switchdev set enable_vlan 0
+		swconfig dev $ralink_switchdev set apply 1
+	fi
+
+	ifname=eth0
 }
 
-platform_do_upgrade() {
-	local board=$(board_name)
-
-	case "$board" in
-	wd,mybooklive)
-		mbl_do_upgrade "$1"
-		;;
-	meraki,mr24|\
-	meraki,mx60|\
-	netgear,wndap620|\
-	netgear,wndap660|\
-	netgear,wndr4700)
-		nand_do_upgrade "$1"
-		;;
-	*)
-		default_do_upgrade "$1"
-		;;
-	esac
-}
-
-platform_copy_config() {
-	local board=$(board_name)
-
-	case "$board" in
-	wd,mybooklive|\
-	wd,mybooklive-duo)
-		mbl_copy_config
-		;;
-	esac
-}
+boot_hook_add preinit_main ramips_set_preinit_iface
