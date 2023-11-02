@@ -1,5 +1,712 @@
-apm821xx_set_preinit_iface() {
-	ifname=eth0
-}
+gitprojects / openwrt / openwrt.git / blob
 
-boot_hook_add preinit_main apm821xx_set_preinit_iface
+commit
+ ? search: 
+ re
+summary | shortlog | log | commit | commitdiff | tree
+history | raw | HEAD
+ramips: add support for Xiaomi Mi Router 4A (100M Edition)
+[openwrt/openwrt.git] / target / linux / ramips / base-files / etc / board.d / 02_network
+   1 #!/bin/sh
+   2 
+   3 . /lib/functions.sh
+   4 . /lib/functions/uci-defaults.sh
+   5 . /lib/functions/system.sh
+   6 
+   7 ramips_setup_rt3x5x_vlans()
+   8 {
+   9         if [ ! -x /sbin/swconfig ]; then
+  10                 # legacy default
+  11                 ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+  12                 return
+  13         fi
+  14         local wanports=""
+  15         local lanports=""
+  16         for port in 5 4 3 2 1 0; do
+  17                 if [ `swconfig dev rt305x port $port get disable` = "1" ]; then
+  18                         continue
+  19                 fi
+  20                 if [ `swconfig dev rt305x port $port get lan` = "0" ]; then
+  21                         wanports="$port:wan $wanports"
+  22                 else
+  23                         lanports="$port:lan $lanports"
+  24                 fi
+  25         done
+  26         ucidef_add_switch "rt305x" $lanports $wanports "6t@eth0"
+  27 }
+  28 
+  29 ramips_setup_interfaces()
+  30 {
+  31         local board="$1"
+  32 
+  33         case $board in
+  34         11acnas|\
+  35         d-team,newifi-d2|\
+  36         dir-615-h1|\
+  37         w2914nsv2|\
+  38         zbt-we2026)
+  39                 ucidef_add_switch "switch0" \
+  40                         "0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
+  41                 ;;
+  42         3g150b|\
+  43         3g300m|\
+  44         a5-v11|\
+  45         all0256n-4M|\
+  46         all0256n-8M|\
+  47         all5002|\
+  48         all5003|\
+  49         bocco|\
+  50         broadway|\
+  51         dcs-930|\
+  52         dcs-930l-b1|\
+  53         ht-tm02|\
+  54         kimax,u35wf|\
+  55         linkits7688 | \
+  56         m2m|\
+  57         microwrt|\
+  58         mikrotik,rbm11g|\
+  59         mpr-a2|\
+  60         ncs601w|\
+  61         omega2 | \
+  62         omega2p | \
+  63         timecloud|\
+  64         tplink,tl-wa801nd-v5|\
+  65         w150m|\
+  66         widora,neo-16m|\
+  67         widora,neo-32m|\
+  68         wnce2001|\
+  69         zbt-cpe102|\
+  70         zorlik,zl5900v2|\
+  71         zte-q7)
+  72                 ucidef_add_switch "switch0"
+  73                 ucidef_add_switch_attr "switch0" "enable" "false"
+  74                 ucidef_set_interface_lan "eth0"
+  75                 ;;
+  76         mlw221|\
+  77         mr-102n)
+  78                 ucidef_set_interface_lan "eth0.2"
+  79                 ;;
+  80         3g-6200n|\
+  81         ai-br100|\
+  82         alfa-network,ac1200rm|\
+  83         mediatek,ap-mt7621a-v60|\
+  84         xzwifi,creativebox-v1|\
+  85         d240|\
+  86         db-wrt01|\
+  87         dir-300-b7|\
+  88         dir-320-b1|\
+  89         dir-610-a1|\
+  90         dir-615-h1|\
+  91         dir-810l|\
+  92         dlink,dwr-116-a1|\
+  93         dlink,dwr-921-c1|\
+  94         dlink,dwr-922-e2|\
+  95         ew1200|\
+  96         firewrt|\
+  97         hc5661a|\
+  98         hc5962|\
+  99         hlk-rm04|\
+ 100         k2p|\
+ 101         kn|\
+ 102         kn_rc|\
+ 103         mac1200rv2|\
+ 104         miwifi-mini|\
+ 105         miwifi-nano|\
+ 106         mt7621|\
+ 107         mt7628|\
+ 108         mtc,wr1201|\
+ 109         mzk-750dhp|\
+ 110         mzk-w300nh2|\
+ 111         nixcore-x1-8M|\
+ 112         nixcore-x1-16M|\
+ 113         oy-0001|\
+ 114         pbr-m1|\
+ 115         psg1208|\
+ 116         psg1218a|\
+ 117         r6220|\
+ 118         netgear,r6350|\
+ 119         rt-n12p|\
+ 120         sap-g3200u3|\
+ 121         sk-wb8|\
+ 122         telco-electronics,x1|\
+ 123         unielec,u7621-06-256m-16m|\
+ 124         unielec,u7621-06-512m-64m|\
+ 125         vr500|\
+ 126         wavlink,wl-wn570ha1|\
+ 127         wavlink,wl-wn575a3|\
+ 128         wf-2881|\
+ 129         whr-g300n|\
+ 130         mqmaker,witi-256m|\
+ 131         mqmaker,witi-512m|\
+ 132         wndr3700v5|\
+ 133         youku-yk1|\
+ 134         youku,yk-l2|\
+ 135         zbt-ape522ii|\
+ 136         zbt-we1326|\
+ 137         zbtlink,zbt-we826-e|\
+ 138         zbtlink,zbt-we3526|\
+ 139         zbt-we826-16M|\
+ 140         zbt-we826-32M|\
+ 141         zbt-wg2626|\
+ 142         zbt-wg3526-16M|\
+ 143         zbt-wg3526-32M|\
+ 144         zbt-wr8305rt)
+ 145                 ucidef_add_switch "switch0" \
+ 146                         "0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
+ 147                 ;;
+ 148         gehua,ghl-r-001)
+ 149                 ucidef_add_switch "switch0" \
+ 150                         "0:lan" "1:lan" "2:lan" "4:wan" "6@eth0"
+ 151                 ;;
+ 152         alfa-network,awusfree1|\
+ 153         alfa-network,tube-e4g|\
+ 154         cs-qr10|\
+ 155         d105|\
+ 156         dlink,dap-1522-a1|\
+ 157         dch-m225|\
+ 158         ex2700|\
+ 159         ex3700|\
+ 160         hpm|\
+ 161         mzk-ex300np|\
+ 162         mzk-ex750np|\
+ 163         na930|\
+ 164         pbr-d1|\
+ 165         ravpower,wd03|\
+ 166         tama,w06|\
+ 167         tplink,tl-mr3020-v3|\
+ 168         tplink,tl-wr802n-v4|\
+ 169         u25awf-h1|\
+ 170         wli-tx4-ag300n|\
+ 171         wmdr-143n|\
+ 172         wmr-300|\
+ 173         wn3000rpv3|\
+ 174         wrh-300cr)
+ 175                 ucidef_set_interface_lan "eth0"
+ 176                 ;;
+ 177         dlink,dwr-118-a1)
+ 178                 ucidef_add_switch "switch0" \
+ 179                         "1:lan:2" "2:lan:3" "3:lan:1" "4:lan:0" "5:wan" "6@eth0"
+ 180                 ;;
+ 181         dlink,dwr-118-a2)
+ 182                 ucidef_add_switch "switch0" \
+ 183                         "1:lan:2" "2:lan:1" "3:lan:3" "4:lan" "0:wan" "6@eth0"
+ 184                 ;;
+ 185         psg1218b)
+ 186                 ucidef_add_switch "switch0" \
+ 187                         "0:lan:3" "1:lan:2" "2:lan:1" "3:wan" "6@eth0"
+ 188                 ;;
+ 189         whr-300hp2|\
+ 190         whr-600d|\
+ 191         wsr-1166|\
+ 192         wsr-600)
+ 193                 ucidef_add_switch "switch0" \
+ 194                         "0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan:5" "6@eth0"
+ 195                 ;;
+ 196         ar670w|\
+ 197         ar725w|\
+ 198         rakwireless,rak633|\
+ 199         rt-ac51u)
+ 200                 ucidef_add_switch "switch0" \
+ 201                         "0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
+ 202                 ;;
+ 203         belkin,f9k1109v1|\
+ 204         rt-n15|\
+ 205         wl-351)
+ 206                 ucidef_add_switch "switch0" \
+ 207                         "0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
+ 208                 ;;
+ 209         asl26555-8M|\
+ 210         asl26555-16M|\
+ 211         rp-n53)
+ 212                 ucidef_add_switch "switch0" \
+ 213                         "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
+ 214                 ;;
+ 215         atp-52b|\
+ 216         awm002-evb-4M|\
+ 217         awm002-evb-8M|\
+ 218         bdcom,wap2100-sk|\
+ 219         c20i|\
+ 220         dir-645|\
+ 221         gl-mt300a|\
+ 222         gl-mt300n|\
+ 223         gl-mt750|\
+ 224         hilink,hlk-7628n|\
+ 225         hiwifi,hc5861b|\
+ 226         jhr-n805r|\
+ 227         jhr-n825r|\
+ 228         jhr-n926r|\
+ 229         mikrotik,rb750gr3|\
+ 230         mikrotik,rbm33g|\
+ 231         mzk-wdpr|\
+ 232         rt-n14u|\
+ 233         skylab,skw92a|\
+ 234         tplink,c20-v4|\
+ 235         tplink,c50-v3|\
+ 236         tplink,c50-v4|\
+ 237         tplink,tl-mr3420-v5|\
+ 238         tplink,tl-wr842n-v5|\
+ 239         tl-wr840n-v4|\
+ 240         tl-wr840n-v5|\
+ 241         tl-wr841n-v13|\
+ 242         u7628-01-128M-16M|\
+ 243         ubnt-erx|\
+ 244         ubnt-erx-sfp|\
+ 245         ur-326n4g|\
+ 246         wrtnode|\
+ 247         wrtnode2p | \
+ 248         wrtnode2r | \
+ 249         youhua,wr1200js|\
+ 250         zbt-wa05|\
+ 251         zyxel,keenetic-extra-ii)
+ 252                 ucidef_add_switch "switch0" \
+ 253                         "1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
+ 254                 ;;
+ 255         c50|\
+ 256         tplink,c20-v1)
+ 257                 ucidef_add_switch "switch0" \
+ 258                         "1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
+ 259                 ;;
+ 260         dir-860l-b1|\
+ 261         elecom,wrc-1167ghbk2-s|\
+ 262         elecom,wrc-2533gst|\
+ 263         elecom,wrc-1900gst|\
+ 264         hg255d|\
+ 265         iodata,wn-ax1167gr|\
+ 266         iodata,wn-gx300gr)
+ 267                 ucidef_add_switch "switch0" \
+ 268                         "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
+ 269                 ;;
+ 270         gnubee,gb-pc1|\
+ 271         gnubee,gb-pc2)
+ 272                 ucidef_add_switch "switch0" \
+ 273                         "0:lan" "4:lan" "6@eth0"
+ 274                 ;;
+ 275         gl-mt300n-v2)
+ 276                 ucidef_add_switch "switch0" \
+ 277                         "1:lan" "0:wan" "6@eth0"
+ 278                 ;;
+ 279         awapn2403)
+ 280                 ucidef_add_switch "switch0" \
+ 281                         "0:lan" "1:wan" "6@eth0"
+ 282                 ;;
+ 283         b2c|\
+ 284         nw718|\
+ 285         psr-680w|\
+ 286         sl-r7205|\
+ 287         ur-336un|\
+ 288         w502u|\
+ 289         wr6202)
+ 290                 ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+ 291                 ;;
+ 292         br-6475nd)
+ 293                 ucidef_add_switch "switch0" \
+ 294                         "1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
+ 295                 ;;
+ 296         c108|\
+ 297         cf-wr800n)
+ 298                 ucidef_add_switch "switch0" \
+ 299                         "4:lan" "6t@eth0"
+ 300                 ;;
+ 301         cudy,wr1000)
+ 302                 ucidef_add_switch "switch0" \
+ 303                         "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+ 304                 ;;
+ 305         cy-swr1100)
+ 306                 ucidef_add_switch "switch0" \
+ 307                         "0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "9@eth0"
+ 308                 ;;
+ 309         duzun-dm06)
+ 310                 ucidef_add_switch "switch0" \
+ 311                         "1:lan" "0:wan" "6@eth0"
+ 312                 ;;
+ 313         e1700|\
+ 314         mt7620a_mt7530)
+ 315                 ucidef_add_switch "switch1" \
+ 316                         "0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
+ 317                 ;;
+ 318         edimax,br-6478ac-v2|\
+ 319         tplink,c2-v1)
+ 320                 ucidef_add_switch "switch1" \
+ 321                         "1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
+ 322                 ;;
+ 323         hc5661|\
+ 324         head-weblink,hdrm200|\
+ 325         y1s)
+ 326                 ucidef_add_switch "switch0" \
+ 327                         "1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
+ 328                 ;;
+ 329         hc5861)
+ 330                 ucidef_add_switch "switch0" \
+ 331                         "0:lan" "1:lan" "5:wan" "6@eth0"
+ 332                 ;;
+ 333         iodata,wn-ac1167gr|\
+ 334         iodata,wn-ac733gr3)
+ 335                 ucidef_add_switch "switch1" \
+ 336                         "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
+ 337                 ;;
+ 338         kn_rf)
+ 339                 ucidef_add_switch "switch0" \
+ 340                         "0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6@eth0"
+ 341                 ;;
+ 342         kng_rc)
+ 343                 ucidef_add_switch "switch1" \
+ 344                         "0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
+ 345                 ;;
+ 346         mlwg2|\
+ 347         wizard8800|\
+ 348         wl-330n)
+ 349                 ucidef_set_interface_lan "eth0.1"
+ 350                 ;;
+ 351         mr200)
+ 352                 ucidef_add_switch "switch0" \
+ 353                         "0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
+ 354                 ucidef_set_interface_wan "usb0"
+ 355                 ;;
+ 356         netgear,r6120)
+ 357                 ucidef_add_switch "switch0" \
+ 358                         "0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+ 359                 ;;
+ 360         hc5761)
+ 361                 ucidef_add_switch "switch0" \
+ 362                         "1:lan" "4:lan" "0:wan" "6@eth0"
+ 363                 ;;
+ 364         mzk-dp150n|\
+ 365         vocore-8M|\
+ 366         vocore-16M)
+ 367                 ucidef_add_switch "switch0" \
+ 368                         "0:lan" "4:lan" "6t@eth0"
+ 369                 ;;
+ 370         newifi-d1)
+ 371                 ucidef_add_switch "switch0" \
+ 372                 "1:lan:2" "2:lan:1" "4:wan" "6@eth0"
+ 373                 ;;
+ 374         phicomm,k2g)
+ 375                 ucidef_add_switch "switch0" \
+ 376                         "0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5:wan" "6@eth0"
+ 377                 ;;
+ 378         dlink,dir-510l|\
+ 379         glinet,vixmini|\
+ 380         netgear,ex6150|\
+ 381         re350-v1)
+ 382                 ucidef_add_switch "switch0" \
+ 383                         "0:lan" "6@eth0"
+ 384                 ;;
+ 385         re6500)
+ 386                 ucidef_add_switch "switch0" \
+ 387                         "0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "6@eth0"
+ 388                 ;;
+ 389         rt-n56u)
+ 390                 ucidef_add_switch "switch0" \
+ 391                         "0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
+ 392                 ;;
+ 393         tew-638apb-v2)
+ 394                 ucidef_add_switch "switch0" \
+ 395                         "4:lan" "6@eth0"
+ 396                 ;;
+ 397         lava,lr-25g001|\
+ 398         tew-691gr|\
+ 399         tew-692gr|\
+ 400         wlr-6000)
+ 401                 ucidef_add_switch "switch0" \
+ 402                         "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
+ 403                 ;;
+ 404         tplink,tl-wr902ac-v3)
+ 405                 ucidef_add_switch "switch0" \
+ 406                         "4:lan" "6@eth0"
+ 407                 ;;
+ 408         vonets,var11n-300|\
+ 409         wt1520-4M|\
+ 410         wt1520-8M)
+ 411                 ucidef_add_switch "switch0" \
+ 412                         "0:lan" "4:wan" "6@eth0"
+ 413                 ;;
+ 414         vocore2|\
+ 415         vocore2lite)
+ 416                 ucidef_add_switch "switch0" \
+ 417                         "0:lan" "2:lan" "6t@eth0"
+ 418                 ;;
+ 419         f5d8235-v1|\
+ 420         f5d8235-v2|\
+ 421         tew-714tru|\
+ 422         v11st-fe|\
+ 423         wzr-agl300nh)
+ 424                 ucidef_add_switch "switch0" \
+ 425                         "1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
+ 426                 ;;
+ 427         wcr-1166ds)
+ 428                 ucidef_add_switch "switch0" \
+ 429                         "3:lan" "4:wan" "6@eth0"
+ 430                 ;;
+ 431         wcr-150gn|\
+ 432         we1026-5g-16m)
+ 433                 ucidef_add_switch "switch0" \
+ 434                         "0:lan" "6t@eth0"
+ 435                 ;;
+ 436         whr-1166d)
+ 437                 ucidef_add_switch "switch0" \
+ 438                         "0:lan" "1:lan" "2:lan" "3:lan" "5:wan" "6@eth0"
+ 439                 ;;
+ 440         wizfi630a)
+ 441                 ucidef_add_switch "switch0" \
+ 442                         "0:lan" "1:lan" "2:wan" "6@eth0"
+ 443                 ;;
+ 444         wiznet,wizfi630s)
+ 445                 ucidef_add_switch "switch0" \
+ 446                         "0:wan" "3:lan" "4:lan" "6@eth0"
+ 447                 ;;
+ 448         wt3020-4M|\
+ 449         wt3020-8M)
+ 450                 ucidef_add_switch "switch0" \
+ 451                         "4:lan" "0:wan" "6@eth0"
+ 452                 ;;
+ 453         xiaomi,mir3g)
+ 454                 ucidef_add_switch "switch0" \
+ 455                         "2:lan:2" "3:lan:1" "1:wan" "6t@eth0"
+ 456                 ;;
+ 457         xiaomi,mir3p)
+ 458                 ucidef_add_switch "switch0" \
+ 459                         "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+ 460                 ;;
+ 461         xiaomi,mir4a-100m)
+ 462                 ucidef_add_switch "switch0" \
+ 463                         "4:lan:1" "2:lan:2" "0:wan" "6@eth0"
+ 464                 ;;
+ 465         zbtlink,zbt-we1226|\
+ 466         y1)
+ 467                 ucidef_add_switch "switch0" \
+ 468                         "0:lan:2" "1:lan:1" "4:wan" "6@eth0"
+ 469                 ;;
+ 470         zyxel,keenetic-start)
+ 471                 ucidef_add_switch "switch0" \
+ 472                         "0:lan:3" "1:lan:2" "2:lan:1" "3:lan:0" "4:wan" "6@eth0"
+ 473                 ;;
+ 474         *)
+ 475                 RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
+ 476                 if [ -n "${RT3X5X}" ]; then
+ 477                         ramips_setup_rt3x5x_vlans
+ 478                 else
+ 479                         ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+ 480                 fi
+ 481                 ;;
+ 482         esac
+ 483 }
+ 484 
+ 485 ramips_setup_macs()
+ 486 {
+ 487         local board="$1"
+ 488         local lan_mac=""
+ 489         local wan_mac=""
+ 490 
+ 491         case $board in
+ 492         a5-v11|\
+ 493         ht-tm02|\
+ 494         wmdr-143n)
+ 495                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 496                 ;;
+ 497         carambola|\
+ 498         freestation5|\
+ 499         w502u|\
+ 500         wnce2001)
+ 501                 wan_mac=$(mtd_get_mac_binary factory 46)
+ 502                 ;;
+ 503         bc2|\
+ 504         broadway|\
+ 505         d105|\
+ 506         dir-300-b7|\
+ 507         dir-320-b1|\
+ 508         dir-620-a1|\
+ 509         esr-9753|\
+ 510         freestation5|\
+ 511         hilink,hlk-7628n|\
+ 512         hlk-rm04|\
+ 513         mpr-a1|\
+ 514         psr-680w|\
+ 515         sl-r7205|\
+ 516         y1|\
+ 517         y1s)
+ 518                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 519                 lan_mac=$(macaddr_setbit_la "$lan_mac")
+ 520                 wan_mac=$(macaddr_add "$lan_mac" 1)
+ 521                 ;;
+ 522         belkin,f9k1109v1)
+ 523                 wan_mac=$(mtd_get_mac_ascii uboot-env HW_WAN_MAC)
+ 524                 lan_mac=$(mtd_get_mac_ascii uboot-env HW_LAN_MAC)
+ 525                 ;;
+ 526         br-6475nd)
+ 527                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 528                 wan_mac=$(mtd_get_mac_binary devdata 7)
+ 529                 ;;
+ 530         cy-swr1100|\
+ 531         dch-m225)
+ 532                 lan_mac=$(mtd_get_mac_ascii factory lanmac)
+ 533                 ;;
+ 534         dir-645)
+ 535                 lan_mac=$(mtd_get_mac_ascii nvram lanmac)
+ 536                 wan_mac=$(mtd_get_mac_ascii nvram wanmac)
+ 537                 ;;
+ 538         dir-860l-b1)
+ 539                 lan_mac=$(mtd_get_mac_ascii factory lanmac)
+ 540                 wan_mac=$(mtd_get_mac_ascii factory wanmac)
+ 541                 ;;
+ 542         dlink,dir-510l|\
+ 543         dlink,dwr-116-a1|\
+ 544         dlink,dwr-118-a1|\
+ 545         dlink,dwr-118-a2|\
+ 546         dlink,dwr-921-c1|\
+ 547         dlink,dwr-922-e2|\
+ 548         lava,lr-25g001)
+ 549                 wan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
+ 550                 lan_mac=$(macaddr_add "$wan_mac" 1)
+ 551                 ;;
+ 552         e1700)
+ 553                 wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
+ 554                 ;;
+ 555         edimax,br-6478ac-v2)
+ 556                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 557                 wan_mac=$(macaddr_add "$lan_mac" 2)
+ 558                 ;;
+ 559         elecom,wrc-1167ghbk2-s|\
+ 560         elecom,wrc-2533gst|\
+ 561         elecom,wrc-1900gst|\
+ 562         sk-wb8)
+ 563                 wan_mac=$(mtd_get_mac_binary factory 57350)
+ 564                 ;;
+ 565         gl-mt300n-v2|\
+ 566         whr-g300n)
+ 567                 wan_mac=$(mtd_get_mac_binary factory 4)
+ 568                 ;;
+ 569         hc5*61|\
+ 570         hc5661a|\
+ 571         hc5962|\
+ 572         hiwifi,hc5861b)
+ 573                 lan_mac=`mtd_get_mac_ascii bdinfo "Vfac_mac "`
+ 574                 [ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
+ 575                 wan_mac=$(macaddr_add "$lan_mac" 1)
+ 576                 ;;
+ 577         iodata,wn-ac1167gr|\
+ 578         iodata,wn-ac733gr3)
+ 579                 wan_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 4)" -1)
+ 580                 ;;
+ 581         iodata,wn-ax1167gr|\
+ 582         iodata,wn-gx300gr)
+ 583                 wan_mac=$(macaddr_add "$(mtd_get_mac_binary Factory 4)" 1)
+ 584                 ;;
+ 585         kn_rc|\
+ 586         kn_rf|\
+ 587         kng_rc)
+ 588                 wan_mac=$(mtd_get_mac_binary factory 40)
+ 589                 ;;
+ 590         linkits7688)
+ 591                 wan_mac=$(mtd_get_mac_binary factory 4)
+ 592                 lan_mac=$(mtd_get_mac_binary factory 46)
+ 593                 ;;
+ 594         mac1200rv2)
+ 595                 lan_mac=$(mtd_get_mac_binary factory_info 13)
+ 596                 wan_mac=$(macaddr_add "$lan_mac" 1)
+ 597                 ;;
+ 598         miwifi-mini)
+ 599                 wan_mac=$(cat /sys/class/net/eth0/address)
+ 600                 lan_mac=$(macaddr_setbit_la "$wan_mac")
+ 601                 ;;
+ 602         m3|\
+ 603         m4-4M|\
+ 604         m4-8M|\
+ 605         x5|\
+ 606         x8)
+ 607                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 608                 lan_mac=$(macaddr_add "$lan_mac" -2)
+ 609                 ;;
+ 610         newifi-d1)
+ 611                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 612                 lan_mac=$(macaddr_add "$lan_mac" 2)
+ 613                 ;;
+ 614         omega2|\
+ 615         omega2p)
+ 616                 wan_mac=$(mtd_get_mac_binary factory 4)
+ 617                 lan_mac=$(mtd_get_mac_binary factory 46)
+ 618                 ;;
+ 619         oy-0001|\
+ 620         phicomm,k2g)
+ 621                 lan_mac=$(mtd_get_mac_binary factory 40)
+ 622                 wan_mac=$(mtd_get_mac_binary factory 46)
+ 623                 ;;
+ 624         r6220|\
+ 625         netgear,r6350)
+ 626                 wan_mac=$(mtd_get_mac_binary factory 4)
+ 627                 lan_mac=$(macaddr_add "$wan_mac" 1)
+ 628                 ;;
+ 629         rt-n56u)
+ 630                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 631                 lan_mac=$(macaddr_setbit_la "$lan_mac")
+ 632                 wan_mac=$(mtd_get_mac_binary factory 32772)
+ 633                 ;;
+ 634         skylab,skw92a)
+ 635                 lan_mac=$(mtd_get_mac_binary factory 40)
+ 636                 wan_mac=$(mtd_get_mac_binary factory 46)
+ 637                 ;;
+ 638         tew-691gr)
+ 639                 wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 3)
+ 640                 ;;
+ 641         tew-692gr)
+ 642                 wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 1)
+ 643                 ;;
+ 644         tiny-ac)
+ 645                 lan_mac=$(mtd_get_mac_ascii u-boot-env LAN_MAC_ADDR)
+ 646                 wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
+ 647                 ;;
+ 648         vr500)
+ 649                 lan_mac=$(mtd_get_mac_binary factory 57344)
+ 650                 wan_mac=$(mtd_get_mac_binary factory 57350)
+ 651                 ;;
+ 652         w306r-v20)
+ 653                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 654                 wan_mac=$(macaddr_add "$lan_mac" 5)
+ 655                 ;;
+ 656         wcr-1166ds|\
+ 657         wsr-1166)
+ 658                 local index="$(find_mtd_index "board_data")"
+ 659                 wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
+ 660                 lan_mac=$wan_mac
+ 661                 ;;
+ 662         wcr-150gn)
+ 663                 wan_mac=$(mtd_get_mac_binary factory 40)
+ 664                 ;;
+ 665         whr-1166d|\
+ 666         whr-300hp2|\
+ 667         whr-600d|\
+ 668         wsr-600)
+ 669                 wan_mac=$(mtd_get_mac_binary factory 4)
+ 670                 lan_mac=$wan_mac
+ 671                 ;;
+ 672         wizfi630a)
+ 673                 lan_mac=$(mtd_get_mac_binary factory 4)
+ 674                 wan_mac=$(mtd_get_mac_binary factory 40)
+ 675                 ;;
+ 676         wlr-6000)
+ 677                 wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 32772)" 2)
+ 678                 ;;
+ 679         xiaomi,mir3g|\
+ 680         xiaomi,mir3p)
+ 681                 lan_mac=$(mtd_get_mac_binary Factory 0xe006)
+ 682                 ;;
+ 683         zyxel,keenetic-start)
+ 684                 wan_mac=$(mtd_get_mac_binary factory 40)
+ 685                 ;;
+ 686         *)
+ 687                 lan_mac=$(cat /sys/class/net/eth0/address)
+ 688                 wan_mac=$(macaddr_add "$lan_mac" 1)
+ 689                 ;;
+ 690         esac
+ 691 
+ 692         [ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+ 693         [ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+ 694 }
+ 695 
+ 696 board_config_update
+ 697 board=$(board_name)
+ 698 ramips_setup_interfaces $board
+ 699 ramips_setup_macs $board
+ 700 board_config_flush
+ 701 
+ 702 exit 0
+OpenWrt Source RepositoryRSSAtom
