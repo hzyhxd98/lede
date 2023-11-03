@@ -6,6 +6,10 @@
 	compatible = "xiaomi,mi-router-4a-100m", "mediatek,mt7628an-soc";
 	model = "Xiaomi Mi Router 4A (100M Edition)";
 
+chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
 	aliases {
 		led-boot = &led_power_yellow;
 		led-failsafe = &led_power_yellow;
